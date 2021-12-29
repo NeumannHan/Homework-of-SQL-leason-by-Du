@@ -1,0 +1,504 @@
+1. select e.ename, e.sal, e.deptno from emp e join (select deptno, max(sal) maxsal from emp group by deptno) t where t.maxsal = e.sal and t.deptno = e.deptno;
++-------+---------+--------+
+| ename | sal     | deptno |
++-------+---------+--------+
+| BLAKE | 2850.00 |     30 |
+| SCOTT | 3000.00 |     20 |
+| KING  | 5000.00 |     10 |
+| FORD  | 3000.00 |     20 |
++-------+---------+--------+
+
+2. select e.ename, e.sal from emp e join (select deptno, avg(sal) avgsal from emp group by deptno) t where e.sal > t.avgsal and e.deptno = t.deptno;
++-------+---------+
+| ename | sal     |
++-------+---------+
+| ALLEN | 1600.00 |
+| JONES | 2975.00 |
+| BLAKE | 2850.00 |
+| SCOTT | 3000.00 |
+| KING  | 5000.00 |
+| FORD  | 3000.00 |
++-------+---------+
+
+3. select deptno, avg(grade) from (select e.deptno deptno, s.grade grade from emp e join salgrade s where e.sal between s.losal and s.hisal) t group by deptno;
+	BETTER: select e.deptno deptno, avg(s.grade) from emp e join salgrade s where e.sal between s.losal and s.hisal group by e.deptno;
++--------+------------+
+| deptno | avg(grade) |
++--------+------------+
+|     10 |     3.6667 |
+|     20 |     2.8000 |
+|     30 |     2.5000 |
++--------+------------+
+
+4. select sal from emp order by sal desc limit 0, 1;
+
++---------+
+| sal     |
++---------+
+| 5000.00 |
++---------+
+	BETTER: select sal from emp where sal not in (select a.sal from emp a join emp b where a.sal < b.sal);
+
+5. select deptno, avg(sal) avg_sal from emp group by deptno order by avg_sal desc limit 1;
+	OTHER: select t.deptno, max(t.avg_sal) from (select deptno, avg(sal) avg_sal from emp group by deptno) as t;
++--------+-------------+
+| deptno | avg_sal     |
++--------+-------------+
+|     10 | 2916.666667 |
++--------+-------------+
+
+6. select t.deptno, d.dname from (select deptno, avg(sal) avg_sal from emp group by deptno order by avg_sal desc limit 1) as t join dept d where d.deptno = t.deptno;
++--------+------------+
+| deptno | dname      |
++--------+------------+
+|     10 | ACCOUNTING |
++--------+------------+
+select d.dname, avg(e.sal) as avgsal
+from emp e
+join dept d
+on e.deptno = d.deptno
+group by d.dname
+order by avgsal desc
+limit 1;
++------------+-------------+
+| dname      | avgsal      |
++------------+-------------+
+| ACCOUNTING | 2916.666667 |
++------------+-------------+
+
+7. select d.dname from dept d join 
+(select t.deptno deptno, s.grade grade from (select deptno, avg(sal) avg_sal from emp group by deptno) t join salgrade s where t.avg_sal between losal and hisal order by grade limit 1) as p
+where d.deptno = p.deptno;
++-------+
+| dname |
++-------+
+| SALES |
++-------+
+
+8. select c.ename, c.sal from emp c join 
+(select max(a.sal) max_sal from emp a join emp b where a.empno not in (select mgr from emp where mgr is not NULL)) t
+where c.sal > t.max_sal;
++-------+---------+
+| ename | sal     |
++-------+---------+
+| JONES | 2975.00 |
+| BLAKE | 2850.00 |
+| CLARK | 2450.00 |
+| SCOTT | 3000.00 |
+| KING  | 5000.00 |
+| FORD  | 3000.00 |
++-------+---------+
+
+9. select ename, sal from emp order by sal desc limit 5;
++-------+---------+
+| ename | sal     |
++-------+---------+
+| KING  | 5000.00 |
+| SCOTT | 3000.00 |
+| FORD  | 3000.00 |
+| JONES | 2975.00 |
+| BLAKE | 2850.00 |
++-------+---------+
+
+10. select ename, sal from emp order by sal desc limit 5, 5;
++--------+---------+
+| ename  | sal     |
++--------+---------+
+| CLARK  | 2450.00 |
+| ALLEN  | 1600.00 |
+| TURNER | 1500.00 |
+| MILLER | 1300.00 |
+| MARTIN | 1250.00 |
++--------+---------+
+
+11. select ename, hiredate from emp order by hiredate desc limit 5;
++--------+------------+
+| ename  | hiredate   |
++--------+------------+
+| ADAMS  | 1987-05-23 |
+| SCOTT  | 1987-04-19 |
+| MILLER | 1982-01-23 |
+| FORD   | 1981-12-03 |
+| JAMES  | 1981-12-03 |
++--------+------------+
+
+12. select grade, count(t.grade) from (select e.sal sal, s.grade grade from emp e join salgrade s where e.sal between s.losal and s.hisal) t group by t.grade;
++-------+----------------+
+| grade | count(t.grade) |
++-------+----------------+
+|     1 |              3 |
+|     2 |              3 |
+|     3 |              2 |
+|     4 |              5 |
+|     5 |              1 |
++-------+----------------+
+	BETTER: select s.grade grade, count(*) from emp e join salgrade s where e.sal between s.losal and s.hisal group by s.grade
+
+13. 
+INSERT INTO C ( CNO, CNAME, CTEACHER ) VALUES ( '1', 'Chinese', 'Zhang'); 
+INSERT INTO C ( CNO, CNAME, CTEACHER ) VALUES ( '2', 'Zhengzhi', 'Wang'); 
+INSERT INTO C ( CNO, CNAME, CTEACHER ) VALUES ( '3', 'English', 'Li'); 
+INSERT INTO C ( CNO, CNAME, CTEACHER ) VALUES ( '4', 'Math', 'Zhao'); 
+INSERT INTO C ( CNO, CNAME, CTEACHER ) VALUES ( '5', 'Wuli', 'Limin');
+
+INSERT INTO S ( SNO, SNAME ) VALUES ( '1', 'S 1'); 
+INSERT INTO S ( SNO, SNAME ) VALUES ( '2', 'S 2'); 
+INSERT INTO S ( SNO, SNAME ) VALUES ( '3', 'S 3'); 
+INSERT INTO S ( SNO, SNAME ) VALUES ( '4', 'S 4');
+
+Q1: 
+select sname from s where sname not in
+(select s.sname from sc join s on s.sno = sc.sno where sc.cno = (
+select cno from C where cteacher = 'Limin'
+));
++-------+
+| sname |
++-------+
+| S 3   |
+| S 4   |
++-------+
+
+Q2:
+select s.sname, avg(sc.scgrade)
+from s
+join sc on sc.sno = s.sno
+join (select sno, count(scgrade) un_count from sc where scgrade < 60 group by sno) t
+on t.sno = s.sno
+where t.un_count >= 2;
++-------+-----------------+
+| sname | avg(sc.scgrade) |
++-------+-----------------+
+| S 1   |              46 |
++-------+-----------------+
+
+Q3:
+select sname
+from s
+where sno in (select sno from sc where cno = 1) and sno in (select sno from sc where cno = 2);
++-------+
+| sname |
++-------+
+| S 1   |
+| S 2   |
++-------+
+
+14. select a.ename, ifnull(b.ename, 'no m') from emp a left join emp b on a.mgr = b.empno;
++--------+-------------------------+
+| ename  | ifnull(b.ename, 'no m') |
++--------+-------------------------+
+| SMITH  | FORD                    |
+| ALLEN  | BLAKE                   |
+| WARD   | BLAKE                   |
+| JONES  | KING                    |
+| MARTIN | BLAKE                   |
+| BLAKE  | KING                    |
+| CLARK  | KING                    |
+| SCOTT  | JONES                   |
+| KING   | no m                    |
+| TURNER | BLAKE                   |
+| ADAMS  | SCOTT                   |
+| JAMES  | BLAKE                   |
+| FORD   | JONES                   |
+| MILLER | CLARK                   |
++--------+-------------------------+
+
+15. 
+select t.empno empno, t.ename_e ename_e, d.dname 
+from 
+(select a.empno empno, a.ename ename_e, a.deptno deptno
+from emp a
+join emp b
+on a.mgr = b.empno
+where a.hiredate < b.hiredate) t
+join dept d
+on t.deptno = d.deptno
+order by empno;
++-------+---------+------------+
+| empno | ename_e | dname      |
++-------+---------+------------+
+|  7369 | SMITH   | RESEARCH   |
+|  7499 | ALLEN   | SALES      |
+|  7521 | WARD    | SALES      |
+|  7566 | JONES   | RESEARCH   |
+|  7698 | BLAKE   | SALES      |
+|  7782 | CLARK   | ACCOUNTING |
++-------+---------+------------+
+
+select a.empno empno, a.ename ename_e, d.dname 
+from emp a
+join emp b
+on a.mgr = b.empno
+join dept d
+on a.deptno = d.deptno
+where a.hiredate < b.hiredate
+order by empno;
+
+16.
+select d.dname dname, e.* from dept d left join emp e on d.deptno = e.deptno;
++------------+-------+--------+-----------+------+------------+---------+---------+--------+
+| dname      | EMPNO | ENAME  | JOB       | MGR  | HIREDATE   | SAL     | COMM    | DEPTNO |
++------------+-------+--------+-----------+------+------------+---------+---------+--------+
+| ACCOUNTING |  7782 | CLARK  | MANAGER   | 7839 | 1981-06-09 | 2450.00 |    NULL |     10 |
+| ACCOUNTING |  7839 | KING   | PRESIDENT | NULL | 1981-11-17 | 5000.00 |    NULL |     10 |
+| ACCOUNTING |  7934 | MILLER | CLERK     | 7782 | 1982-01-23 | 1300.00 |    NULL |     10 |
+| RESEARCH   |  7369 | SMITH  | CLERK     | 7902 | 1980-12-17 |  800.00 |    NULL |     20 |
+| RESEARCH   |  7566 | JONES  | MANAGER   | 7839 | 1981-04-02 | 2975.00 |    NULL |     20 |
+| RESEARCH   |  7788 | SCOTT  | ANALYST   | 7566 | 1987-04-19 | 3000.00 |    NULL |     20 |
+| RESEARCH   |  7876 | ADAMS  | CLERK     | 7788 | 1987-05-23 | 1100.00 |    NULL |     20 |
+| RESEARCH   |  7902 | FORD   | ANALYST   | 7566 | 1981-12-03 | 3000.00 |    NULL |     20 |
+| SALES      |  7499 | ALLEN  | SALESMAN  | 7698 | 1981-02-20 | 1600.00 |  300.00 |     30 |
+| SALES      |  7521 | WARD   | SALESMAN  | 7698 | 1981-02-22 | 1250.00 |  500.00 |     30 |
+| SALES      |  7654 | MARTIN | SALESMAN  | 7698 | 1981-09-28 | 1250.00 | 1400.00 |     30 |
+| SALES      |  7698 | BLAKE  | MANAGER   | 7839 | 1981-05-01 | 2850.00 |    NULL |     30 |
+| SALES      |  7844 | TURNER | SALESMAN  | 7698 | 1981-09-08 | 1500.00 |    0.00 |     30 |
+| SALES      |  7900 | JAMES  | CLERK     | 7698 | 1981-12-03 |  950.00 |    NULL |     30 |
+| OPERATIONS |  NULL | NULL   | NULL      | NULL | NULL       |    NULL |    NULL |   NULL |
++------------+-------+--------+-----------+------+------------+---------+---------+--------+
+
+17.
+select d.dname dname, count(*) d_count from emp e join dept d on d.deptno = e.deptno group by e.deptno having d_count > 4;
++----------+---------+
+| dname    | d_count |
++----------+---------+
+| RESEARCH |       5 |
+| SALES    |       6 |
++----------+---------+
+
+18.
+select * from emp a join (select sal from emp where ENAME = 'SMITH') t on a.sal > t.sal;
++-------+--------+-----------+------+------------+---------+---------+--------+--------+
+| EMPNO | ENAME  | JOB       | MGR  | HIREDATE   | SAL     | COMM    | DEPTNO | sal    |
++-------+--------+-----------+------+------------+---------+---------+--------+--------+
+|  7499 | ALLEN  | SALESMAN  | 7698 | 1981-02-20 | 1600.00 |  300.00 |     30 | 800.00 |
+|  7521 | WARD   | SALESMAN  | 7698 | 1981-02-22 | 1250.00 |  500.00 |     30 | 800.00 |
+|  7566 | JONES  | MANAGER   | 7839 | 1981-04-02 | 2975.00 |    NULL |     20 | 800.00 |
+|  7654 | MARTIN | SALESMAN  | 7698 | 1981-09-28 | 1250.00 | 1400.00 |     30 | 800.00 |
+|  7698 | BLAKE  | MANAGER   | 7839 | 1981-05-01 | 2850.00 |    NULL |     30 | 800.00 |
+|  7782 | CLARK  | MANAGER   | 7839 | 1981-06-09 | 2450.00 |    NULL |     10 | 800.00 |
+|  7788 | SCOTT  | ANALYST   | 7566 | 1987-04-19 | 3000.00 |    NULL |     20 | 800.00 |
+|  7839 | KING   | PRESIDENT | NULL | 1981-11-17 | 5000.00 |    NULL |     10 | 800.00 |
+|  7844 | TURNER | SALESMAN  | 7698 | 1981-09-08 | 1500.00 |    0.00 |     30 | 800.00 |
+|  7876 | ADAMS  | CLERK     | 7788 | 1987-05-23 | 1100.00 |    NULL |     20 | 800.00 |
+|  7900 | JAMES  | CLERK     | 7698 | 1981-12-03 |  950.00 |    NULL |     30 | 800.00 |
+|  7902 | FORD   | ANALYST   | 7566 | 1981-12-03 | 3000.00 |    NULL |     20 | 800.00 |
+|  7934 | MILLER | CLERK     | 7782 | 1982-01-23 | 1300.00 |    NULL |     10 | 800.00 |
++-------+--------+-----------+------+------------+---------+---------+--------+--------+
+select * from emp where sal > (select sal from emp where ENAME = 'SMITH');
+
+
+19. 
+select a.ename ename, t.dname dname, t.d_count cc from emp a
+join (select d.deptno deptno, d.dname dname, count(*) d_count from emp e join dept d on d.deptno = e.deptno group by e.deptno) t
+on a.job = 'clerk' and a.deptno = t.deptno;
++--------+------------+----+
+| ename  | dname      | cc |
++--------+------------+----+
+| SMITH  | RESEARCH   |  5 |
+| ADAMS  | RESEARCH   |  5 |
+| JAMES  | SALES      |  6 |
+| MILLER | ACCOUNTING |  3 |
++--------+------------+----+
+
+20. 
+select job, count(*) from emp group by job having min(sal) > 1500;
++-----------+----------+---------+
+| job       | count(*) | min_sal |
++-----------+----------+---------+
+| ANALYST   |        2 | 3000.00 |
+| MANAGER   |        3 | 2450.00 |
+| PRESIDENT |        1 | 5000.00 |
++-----------+----------+---------+
+
+21. 
+select ename from emp where deptno = (select deptno from dept where dname='SALES');
++--------+
+| ename  |
++--------+
+| ALLEN  |
+| WARD   |
+| MARTIN |
+| BLAKE  |
+| TURNER |
+| JAMES  |
++--------+
+
+22.
+select a.ename 'ename', d.dname 'dname', b.ename, s.grade
+from emp a
+left join emp b
+on a.mgr = b.empno
+join dept d
+on d.deptno = a.deptno
+join salgrade s
+on a.sal between s.losal and s.hisal
+where a.sal > (select avg(sal) from emp);
++-------+------------+-------+-------+
+| ename | dname      | ename | grade |
++-------+------------+-------+-------+
+| JONES | RESEARCH   | KING  |     4 |
+| BLAKE | SALES      | KING  |     4 |
+| CLARK | ACCOUNTING | KING  |     4 |
+| SCOTT | RESEARCH   | JONES |     4 |
+| KING  | ACCOUNTING | NULL  |     5 |
+| FORD  | RESEARCH   | JONES |     4 |
++-------+------------+-------+-------+
+
+23.
+select e.ename, d.dname
+from emp e
+join dept d
+on e.deptno = d.deptno
+where e.job = (select job from emp where ename = 'scott');
++-------+----------+
+| ename | dname    |
++-------+----------+
+| SCOTT | RESEARCH |
+| FORD  | RESEARCH |
++-------+----------+
+
+24.
+select a.ename, a.sal
+from emp a
+join (select * from emp where deptno = '30') b
+on a.sal = b.sal and a.deptno <> 30;
+
+25. 
+select e.ename, e.sal, d.dname from emp e join dept d on d.deptno = e.deptno where e.sal > (select max(sal) from emp where deptno = 30);
++-------+---------+------------+
+| ename | sal     | dname      |
++-------+---------+------------+
+| JONES | 2975.00 | RESEARCH   |
+| SCOTT | 3000.00 | RESEARCH   |
+| KING  | 5000.00 | ACCOUNTING |
+| FORD  | 3000.00 | RESEARCH   |
++-------+---------+------------+
+
+26.
+select d.dname, count(e.ename), avg(e.sal), avg(timestampdiff(year, e.hiredate, now()))
+from emp e
+right join dept d on d.deptno = e.deptno
+group by e.deptno;
++------------+----------------+-------------+---------------------------------------------+
+| dname      | count(e.ename) | avg(e.sal)  | avg(timestampdiff(year, e.hiredate, now())) |
++------------+----------------+-------------+---------------------------------------------+
+| OPERATIONS |              0 |        NULL |                                        NULL |
+| ACCOUNTING |              3 | 2916.666667 |                                     39.6667 |
+| RESEARCH   |              5 | 2175.000000 |                                     37.8000 |
+| SALES      |              6 | 1566.666667 |                                     40.0000 |
++------------+----------------+-------------+---------------------------------------------+
+
+27. 
+select e.ename, d.dname, e.sal
+from emp e
+join dept d
+on e.deptno = d.deptno;
++--------+------------+---------+
+| ename  | dname      | sal     |
++--------+------------+---------+
+| CLARK  | ACCOUNTING | 2450.00 |
+| KING   | ACCOUNTING | 5000.00 |
+| MILLER | ACCOUNTING | 1300.00 |
+| SMITH  | RESEARCH   |  800.00 |
+| JONES  | RESEARCH   | 2975.00 |
+| SCOTT  | RESEARCH   | 3000.00 |
+| ADAMS  | RESEARCH   | 1100.00 |
+| FORD   | RESEARCH   | 3000.00 |
+| ALLEN  | SALES      | 1600.00 |
+| WARD   | SALES      | 1250.00 |
+| MARTIN | SALES      | 1250.00 |
+| BLAKE  | SALES      | 2850.00 |
+| TURNER | SALES      | 1500.00 |
+| JAMES  | SALES      |  950.00 |
++--------+------------+---------+
+
+28.
+select d.*, ifnull(count(e.ename), 0)
+from emp e
+right join dept d
+on d.deptno = e.deptno
+group by e.deptno;
++--------+------------+----------+---------------------------+
+| DEPTNO | DNAME      | LOC      | ifnull(count(e.ename), 0) |
++--------+------------+----------+---------------------------+
+|     40 | OPERATIONS | BOSTON   |                         0 |
+|     10 | ACCOUNTING | NEW YORK |                         3 |
+|     20 | RESEARCH   | DALLAS   |                         5 |
+|     30 | SALES      | CHICAGO  |                         6 |
++--------+------------+----------+---------------------------+
+
+29.
+select e.*
+from emp e
+join (select min(sal) sal from emp group by job) t
+on e.sal = t.sal;
++-------+--------+-----------+------+------------+---------+---------+--------+
+| EMPNO | ENAME  | JOB       | MGR  | HIREDATE   | SAL     | COMM    | DEPTNO |
++-------+--------+-----------+------+------------+---------+---------+--------+
+|  7369 | SMITH  | CLERK     | 7902 | 1980-12-17 |  800.00 |    NULL |     20 |
+|  7521 | WARD   | SALESMAN  | 7698 | 1981-02-22 | 1250.00 |  500.00 |     30 |
+|  7654 | MARTIN | SALESMAN  | 7698 | 1981-09-28 | 1250.00 | 1400.00 |     30 |
+|  7782 | CLARK  | MANAGER   | 7839 | 1981-06-09 | 2450.00 |    NULL |     10 |
+|  7788 | SCOTT  | ANALYST   | 7566 | 1987-04-19 | 3000.00 |    NULL |     20 |
+|  7839 | KING   | PRESIDENT | NULL | 1981-11-17 | 5000.00 |    NULL |     10 |
+|  7902 | FORD   | ANALYST   | 7566 | 1981-12-03 | 3000.00 |    NULL |     20 |
++-------+--------+-----------+------+------------+---------+---------+--------+
+
+30.
+select a.deptno, min(a.sal) from emp a join emp b on a.empno = b.mgr group by a.deptno;
++--------+------------+
+| deptno | min(a.sal) |
++--------+------------+
+|     10 |    2450.00 |
+|     20 |    2975.00 |
+|     30 |    2850.00 |
++--------+------------+
+
+31.
+select ename, 12 * sal as income from emp order by income;
++--------+----------+
+| ename  | income   |
++--------+----------+
+| SMITH  |  9600.00 |
+| JAMES  | 11400.00 |
+| ADAMS  | 13200.00 |
+| WARD   | 15000.00 |
+| MARTIN | 15000.00 |
+| MILLER | 15600.00 |
+| TURNER | 18000.00 |
+| ALLEN  | 19200.00 |
+| CLARK  | 29400.00 |
+| BLAKE  | 34200.00 |
+| JONES  | 35700.00 |
+| FORD   | 36000.00 |
+| SCOTT  | 36000.00 |
+| KING   | 60000.00 |
++--------+----------+
+
+32.
+select b. ename, a.ename from emp a join emp b on a.empno = b.mgr where a.sal > 3000;
++-------+-------+
+| ename | ename |
++-------+-------+
+| JONES | KING  |
+| BLAKE | KING  |
+| CLARK | KING  |
++-------+-------+
+
+33. 
+select d.dname, sum(e.sal), count(e.ename) 
+from emp e
+right join dept d
+on d.deptno = e.deptno
+where d.dname like '%s%'
+group by e.deptno
+;
++------------+------------+----------------+
+| dname      | sum(e.sal) | count(e.ename) |
++------------+------------+----------------+
+| OPERATIONS |       NULL |              0 |
+| RESEARCH   |   10875.00 |              5 |
+| SALES      |    9400.00 |              6 |
++------------+------------+----------------+
+
+34.
+update emp set sal = sal * 1.1 where timestampdiff(year, hiredate, now()) > 30;
